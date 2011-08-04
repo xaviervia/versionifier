@@ -1,0 +1,23 @@
+# Versionifier
+
+A silly Ruby gem for modifying the version number of a project from the shell.
+
+## Installation
+
+  gem install versionifier
+  
+## Sample Usage
+
+  /home/your_project$ v+ 0.1.0
+  In your_project (0.0.3)
+  - Version number updated to (0.1.3)
+  
+<tt>Versionifier</tt> assumes that the project name is the same as the folder you are working on, and that you're using the gem folder setup shipped default by the Bundler gem generator.
+
+Which is the same as saying that assumes that your version file will be located in:
+
+  /your_project/lib/your_project/version.rb
+  
+Copyright 2011 Xavier Via
+
+GPL License
