@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+
+the_project = { :name => Dir.pwd.split("/").last }
+
+the_version_file = { 
+  :path => Dir.pwd + "/lib/" + the_project[:name] + "/version.rb" 
+}
+
+raise ArgumentError, "Version file not found on #{the_version_file[:path]}" unless File.exists? the_version_file[:path]
+
+the_version_file[:content] = File.read the_version_file[:path]
+
+the_matches = the_version_file[:content].match /VERSION\s+=\s+"(\d+?)\.(\d+?)\.(\d+?)"/
+
+the_version = {
+  :major    => the_matches[1].to_i,
+  :regular  => the_matches[2].to_i,
+  :minor    => the_matches[3].to_i
+}
+
+if ARGV.empty?
+  puts ""
+  puts "Working on #{the_project[:name]} (#{the_version[:major]}.#{the_version[:regular]}.#{the_version[:minor]})"
+  puts ""
+  puts "Usage: "
+  puts "  v+ 1        # 0.0.4 -> 0.0.5"
+  puts "  v+ 1.0      # 0.0.4 -> 0.1.4"
+  puts "  v+ 1.0.0    # 0.0.4 -> 1.0.4"
+  puts ""
+  puts "Any combination is valid. For example:"
+  puts "  v+ 1.0.2    # 0.0.4 -> 1.0.6"
+
+else
+  
+  the_argument = { :raw => ARGV.shift }
+  the_new_version = the_version.clone
+  
+  if the_match = the_argument[:raw].match(/^\d+$/)
+    the_argument.merge! :major => 0, :regular => 0, :minor => the_match[0].to_i
+  elsif the_match = the_argument[:raw].match(/^(\d+?)\.(\d+)$/)
+    the_argument.merge! :major => 0, :regular => the_match[1].to_i, :minor => the_match[2].to_i
+  elsif the_match = the_argument[:raw].match(/^(\d+?)\.(\d+?)\.(\d+)$/)
+    the_argument.merge! :major => the_match[1].to_i,
+                        :regular => the_match[2].to_i,
+                        :minor => the_match[3].to_i
+  else
+    raise ArgumentError, "The argument must follow the format <number>[.<number>[.<number>]]"
+  end
+  
+  the_new_version[:major]     += the_argument[:major]
+  the_new_version[:regular]   += the_argument[:regular]
+  the_new_version[:minor]     += the_argument[:minor]
+
+  the_final_file = the_version_file[:content].gsub(/VERSION\s+=\s+"\d+?\.\d+?\.\d+?"/, "VERSION = \"#{the_new_version[:major]}.#{the_new_version[:regular]}.#{the_new_version[:minor]}\"")
+  
+  # Save the file
+  File.open the_version_file[:path], "w" do |file|
+    file.write the_final_file
+  end
+  
+  puts "In #{the_project[:name]} (#{the_version[:major]}.#{the_version[:regular]}.#{the_version[:minor]}) "
+  puts "  - Version number updated to (#{the_new_version[:major]}.#{the_new_version[:regular]}.#{the_new_version[:minor]})"
+  
+end
