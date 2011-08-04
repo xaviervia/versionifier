@@ -1,12 +1,12 @@
-# Versionifier
+= Versionifier
 
 A silly Ruby gem for modifying the version number of a project from the shell.
 
-## Installation
+== Installation
 
   gem install versionifier
   
-## Sample Usage
+== Sample Usage
 
   /home/your_project$ v+ 0.1.0
   In your_project (0.0.3)
