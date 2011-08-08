@@ -1,3 +1,1 @@
-module Versionifier
-  # Your code goes here...
-end
+require "versionifier/version"

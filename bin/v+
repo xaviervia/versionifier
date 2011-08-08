@@ -1,64 +1,83 @@
 #!/usr/bin/env ruby
+require "versionifier"
 
-the_project = { :name => Dir.pwd.split("/").last }
-
+# Get the project name and the version file path
+the_project = { 
+  :name => Dir.pwd.split("/").last }
 the_version_file = { 
-  :path => Dir.pwd + "/lib/" + the_project[:name] + "/version.rb" 
-}
+  :path => Dir.pwd + "/lib/" + the_project[:name] + "/version.rb" }
 
+# Exit if version file not found
 raise ArgumentError, "Version file not found on #{the_version_file[:path]}" unless File.exists? the_version_file[:path]
 
+# Read the current version from the version file
 the_version_file[:content] = File.read the_version_file[:path]
+the_matches = the_version_file[:content].match /VERSION\s+=\s+"(\d+?\.\d+?\.\d+?)"/
 
-the_matches = the_version_file[:content].match /VERSION\s+=\s+"(\d+?)\.(\d+?)\.(\d+?)"/
+# Create a version from the data
+current_version = Versionifier::Version.new the_matches[1]
 
-the_version = {
-  :major    => the_matches[1].to_i,
-  :regular  => the_matches[2].to_i,
-  :minor    => the_matches[3].to_i
-}
+instructions = <<-INST
 
-if ARGV.empty?
-  puts ""
-  puts "Working on #{the_project[:name]} (#{the_version[:major]}.#{the_version[:regular]}.#{the_version[:minor]})"
-  puts ""
-  puts "Usage: "
-  puts "  v+ 1        # 0.0.4 -> 0.0.5"
-  puts "  v+ 1.0      # 0.0.4 -> 0.1.4"
-  puts "  v+ 1.0.0    # 0.0.4 -> 1.0.4"
-  puts ""
-  puts "Any combination is valid. For example:"
-  puts "  v+ 1.0.2    # 0.0.4 -> 1.0.6"
+Working on #{the_project[:name]} (#{current_version})"
 
-else
+Usage:
+  v+ 1        # 0.0.4 -> 0.0.5
+  v+ 1.x      # 0.0.4 -> 0.1.4
+  v+ 1.x.x    # 0.0.4 -> 1.0.4
+
+'!' at the end of the argument resets minor version numbers:
+  v+ 1.x!     # 0.0.4 -> 0.1.0
+  v+ 2.x.x!   # 0.0.4 -> 2.0.0
+INST
+
+# Depending on the arguments...
+unless ARGV.empty?
+  the_argument = ARGV.shift
   
-  the_argument = { :raw => ARGV.shift }
-  the_new_version = the_version.clone
-  
-  if the_match = the_argument[:raw].match(/^\d+$/)
-    the_argument.merge! :major => 0, :regular => 0, :minor => the_match[0].to_i
-  elsif the_match = the_argument[:raw].match(/^(\d+?)\.(\d+)$/)
-    the_argument.merge! :major => 0, :regular => the_match[1].to_i, :minor => the_match[2].to_i
-  elsif the_match = the_argument[:raw].match(/^(\d+?)\.(\d+?)\.(\d+)$/)
-    the_argument.merge! :major => the_match[1].to_i,
-                        :regular => the_match[2].to_i,
-                        :minor => the_match[3].to_i
-  else
-    raise ArgumentError, "The argument must follow the format <number>[.<number>[.<number>]]"
+  # Check if argument is reset
+  if the_argument.end_with? "!"
+    the_argument = the_argument[0..the_argument.length-2]
+    options = :reset
+  else 
+    options = nil
   end
   
-  the_new_version[:major]     += the_argument[:major]
-  the_new_version[:regular]   += the_argument[:regular]
-  the_new_version[:minor]     += the_argument[:minor]
-
-  the_final_file = the_version_file[:content].gsub(/VERSION\s+=\s+"\d+?\.\d+?\.\d+?"/, "VERSION = \"#{the_new_version[:major]}.#{the_new_version[:regular]}.#{the_new_version[:minor]}\"")
+  incrementation = 0
+  which = nil
+  # Check if argument is properly formed
+  if matches = the_argument.match(/^(\d+)\.x\.x$|^(\d+)\.x$|^(\d+)$/)
+    if matches[1]
+      incrementation = matches[1].to_i
+      which = :major
+    elsif matches[2]
+      incrementation = matches[2].to_i
+      which = :regular
+    elsif matches[3]
+      incrementation = matches[3].to_i
+      which = :minor
+    end
+  else
+    puts "Malformed argument. Please follow usage instructions:"
+    puts instructions
+    Process.exit!
+  end
   
+  # Get the final file
+  the_final_version = current_version.increment which, incrementation, options
+  the_final_file = the_version_file[:content].gsub(/VERSION\s+=\s+"\d+?\.\d+?\.\d+?"/, "VERSION = \"#{the_final_version}\"")
+
   # Save the file
   File.open the_version_file[:path], "w" do |file|
     file.write the_final_file
   end
-  
-  puts "In #{the_project[:name]} (#{the_version[:major]}.#{the_version[:regular]}.#{the_version[:minor]}) "
-  puts "  - Version number updated to (#{the_new_version[:major]}.#{the_new_version[:regular]}.#{the_new_version[:minor]})"
-  
+
+  puts "In #{the_project[:name]} (#{current_version}) "
+  puts "  - Version number updated to (#{the_final_version})"
+
+else
+
+  # Print instructions  
+  puts instructions
+
 end
