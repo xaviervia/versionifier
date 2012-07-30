@@ -12,14 +12,14 @@ raise ArgumentError, "Version file not found on #{the_version_file[:path]}" unle
 
 # Read the current version from the version file
 the_version_file[:content] = File.read the_version_file[:path]
-the_matches = the_version_file[:content].match /VERSION\s+=\s+"(\d+?\.\d+?\.\d+?)"/
+the_matches = the_version_file[:content].match /VERSION\s+=\s+["'](\d+?\.\d+?\.\d+?)["']/
 
 # Create a version from the data
 current_version = Versionifier::Version.new the_matches[1]
 
 instructions = <<-INST
 
-Working on #{the_project[:name]} (#{current_version})"
+Working on #{the_project[:name]} (#{current_version})
 
 Usage:
   v+ 1        # 0.0.4 -> 0.0.5
@@ -65,7 +65,7 @@ unless ARGV.empty?
   
   # Get the final file
   the_final_version = current_version.increment which, incrementation, options
-  the_final_file = the_version_file[:content].gsub(/VERSION\s+=\s+"\d+?\.\d+?\.\d+?"/, "VERSION = \"#{the_final_version}\"")
+  the_final_file = the_version_file[:content].gsub(/VERSION\s+=\s+["']\d+?\.\d+?\.\d+?["']/, "VERSION = \"#{the_final_version}\"")
 
   # Save the file
   File.open the_version_file[:path], "w" do |file|

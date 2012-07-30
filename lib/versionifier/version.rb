@@ -1,5 +1,5 @@
 module Versionifier
-  VERSION = "0.1.0"
+  VERSION = "0.1.1"
 
   class Version
     attr_accessor :major, :regular, :minor
